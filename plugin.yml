@@ -1,0 +1,17 @@
+name: AWS Assume Role in Current Account
+description: Assumes an IAM Role in the current account before running a command.
+author: https://github.com/gantry-ml
+requirements:
+  - aws
+  - jq
+configuration:
+  properties:
+    duration:
+      type: string
+    role:
+      type: string
+    region:
+      type: string
+  required:
+    - role
+  additionalProperties: false

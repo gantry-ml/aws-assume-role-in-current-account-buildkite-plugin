@@ -1,0 +1,5 @@
+steps:
+  - label: ":shell: Lint"
+    plugins:
+      plugin-linter:
+        id: gantry-ml/aws-assume-role-in-current-account

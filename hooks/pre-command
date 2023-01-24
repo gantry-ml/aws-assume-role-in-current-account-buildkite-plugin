@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+main() {
+  if [[ "${BUILDKITE_PLUGIN_AWS_ASSUME_ROLE_IN_CURRENT_ACCOUNT_ROLE:-}" == *"arn:aws"* ]]; then
+    local ROLE_ARN="${BUILDKITE_PLUGIN_AWS_ASSUME_ROLE_IN_CURRENT_ACCOUNT_ROLE}"
+  else
+    local ROLE_ARN="arn:aws:iam::$(aws sts get-caller-identity --output=json | jq -r '.Account'):role/${BUILDKITE_PLUGIN_AWS_ASSUME_ROLE_IN_CURRENT_ACCOUNT_ROLE:-}"
+  fi
+  local role="${ROLE_ARN:-}"
+  local duration="${BUILDKITE_PLUGIN_AWS_ASSUME_ROLE_IN_CURRENT_ACCOUNT_DURATION:-900}"
+  local region="${BUILDKITE_PLUGIN_AWS_ASSUME_ROLE_IN_CURRENT_ACCOUNT_REGION:-""}"
+  local buildnum="${BUILDKITE_BUILD_NUMBER:-unknown}"
+
+  if [[ -n $role ]]; then
+    echo "~~~ Assuming role $role ..."
+    assume_role "$role" "$buildnum" "$duration"
+    if [[ -n $region ]]; then
+      export AWS_REGION="$region"
+      export AWS_DEFAULT_REGION="$region"
+    fi
+  else
+    echo >&2 "Missing BUILDKITE_PLUGIN_AWS_ASSUME_ROLE_IN_CURRENT_ACCOUNT_ROLE"
+  fi
+}
+
+assume_role() {
+  local role="$1"
+  local session="$2"
+  local duration="$3"
+  local creds=$(aws sts assume-role \
+    --role-arn "$role" \
+    --role-session-name "${session}" \
+    --duration-seconds "$duration" \
+    --query Credentials
+    --output json)
+  
+    export AWS_ACCESS_KEY_ID=$(echo "$creds" | jq -r '.AccessKeyId')
+    export AWS_SECRET_ACCESS_KEY=$(echo "$creds" | jq -r '.SecretAccessKey')
+    export AWS_SESSION_TOKEN=$(echo "$creds" | jq -r '.SessionToken')
+}
+
+main
