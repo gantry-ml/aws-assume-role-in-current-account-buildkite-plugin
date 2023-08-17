@@ -11,10 +11,12 @@ main() {
   local duration="${BUILDKITE_PLUGIN_AWS_ASSUME_ROLE_IN_CURRENT_ACCOUNT_DURATION:-900}"
   local region="${BUILDKITE_PLUGIN_AWS_ASSUME_ROLE_IN_CURRENT_ACCOUNT_REGION:-""}"
   local buildnum="${BUILDKITE_BUILD_NUMBER:-unknown}"
+  local pipeline="${BUILDKITE_PIPELINE_NAME:-unknown}"
+  local session="bk-$pipeline-$buildnum"
 
   if [[ -n $role ]]; then
     echo "~~~ Assuming role $role ..."
-    assume_role "$role" "$buildnum" "$duration"
+    assume_role "$role" "$session" "$duration"
     if [[ -n $region ]]; then
       export AWS_REGION="$region"
       export AWS_DEFAULT_REGION="$region"
